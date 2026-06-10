@@ -10,6 +10,21 @@
 // --- Configuração de Recursos do Banqueiro ---
 #define NUM_RESOURCES 3 // Ex: 0 = Impressora, 1 = Disco, 2 = Rede
 
+// --- Configuração de Recursos da Memória Virtual ---
+#define NUM_FRAMES 8            // Tamanho da RAM física | pode ser alterada para até 12 para exemplos diferentes
+#define MAX_PAGES_PER_PROCESS 6 // Limite máximo de páginas que um processo pode ter
+
+typedef struct {
+    int valid;              // 1 se a página está na RAM, 0 se ocorreu Page Fault
+    int frame_allocated;    // Índice do frame da página na memória RAM (se valid == 1)
+} PageTableEntry;
+
+typedef struct {
+    int process_id;         // ID do processo dono da página
+    int logical_page;        // QUAL página do processo está neste Frame da memória RAM
+    int reference_bit;      // Bit 'R' - para o Algoritmo de Segunda Chance (0 ou 1)
+} Frame;
+
 typedef enum{
     PRONTO,
     EM_EXECUCAO,
@@ -87,25 +102,14 @@ void add_gantt_event(int start, int end, int pid, const char* note);
 void print_gantt_chart(void);
 void reset_gantt(void);
 
+// --- Variáveis Globais de Memória Virtual ---
+extern Frame RAM[NUM_FRAMES];   // Número de Frames da memória
+extern int clock_pointer;       // Ponteiro do 'relógio' da memória virtual (utilizado no Algoritmo de Segunda Chance)
 
-// --- Configuração de Recursos da Memória Virtual ---
-#define NUM_FRAMES 8            // Tamanho da RAM física | pode ser alterada para até 12 para exemplos diferentes
-#define MAX_PAGES_PER_PROCESS 6 // Limite máximo de páginas que um processo pode ter
-
-typedef struct {
-    int valid;              // 1 se a página está na RAM, 0 se ocorreu Page Fault
-    int frame_allocated;    // Índice do frame da página na memória RAM (se valid == 1)
-} PageTableEntry;
-
-
-typedef struct {
-    int owner_process_id;   // ID do processo dono da página
-    int logical_age;        // QUAL página do processo está neste Frame da memória RAM
-    int reference_bit;      // Bit 'R' - para o Algoritmo de Segunda Chance (0 ou 1)
-} Frame;
-
-
-
+// --- Funções de Memória Virtual ---
+void initialize_memory(void);
+int generate_memory_request(Process* p);
+void handle_page_fault(Process* p, int logical_page);
 
 
 

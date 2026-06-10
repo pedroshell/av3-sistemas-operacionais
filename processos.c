@@ -37,8 +37,21 @@ void create_process(void){
         new_process->temp_finish = 0;
     }
 
+    //  --- Setup da Memória Virtual ---
+    //  Sorteia um número de páginas para o process entre 3 e MAX_PAGES_PER_PROCESS
+    new_process->num_pages = (rand() % (MAX_PAGES_PER_PROCESS - 2)) + 3;
+
+    //  Alocar o vetor na tabela de páginas dinamicamente
+    new_process->page_table = (PageTableEntry*)malloc(new_process->num_pages * sizeof(PageTableEntry));
+
+    //  Inicializar a tabela de páginas (Nenhuma página está na RAM no início)
+    for (int i = 0; i < new_process->num_pages; i++){
+        new_process->page_table[i].valid = 0;
+        new_process->page_table[i].frame_allocated = -1;
+    }
+
     new_process->next = NULL;
-    
+
     if(!process_list){
         process_list = new_process;
     }else{
@@ -100,6 +113,7 @@ void terminate_process(int id){
         wake_up_resource_blocked_processes();
         
         terminal_writestring("Processo ERRADICADO com sucesso.\n");
+        free(current->page_table);
         free(current);
         return;
     }
