@@ -24,6 +24,10 @@ void execute_processes_rr(void){
 
     terminal_writestring("Iniciando escalonamento ROUND ROBIN (I/O Assincrono e Banqueiro)......\n");
 
+    printf("\n--- ESTADO INICIAL DA MEMORIA (VAZIA) ---\n");
+    print_memory_status();
+    printf("\n");
+
     while (process_list != NULL) {
         int all_blocked = 1;
         Process* temp = process_list;
@@ -96,6 +100,20 @@ void execute_processes_rr(void){
 
             while(time_run < quantum && current->time_remaining > 0) {
                 
+                // --- SIMULAÇÃO DE ACESSO À MEMÓRIA (PAGE FAULT) ---
+                // Verifica a memória antes de qualquer coisa (recursos ou I/O)
+                if (generate_memory_request(current) == 1){
+                    // Retornou 1: Page Fault!
+                    // O processo precisa ir ao disco buscar a página. Ele é bloqueado.
+                    current->state = BLOQUEADO;
+                    current->blocked_time_remaining = 3; // Tempo simulado para buscar no disco
+                    blocked_now = 1;
+                    last_id = 1;
+
+                    // Como acessar o disco é muito lento, ele perde o resto do Quantum nesta iteração
+                    break;
+                }
+
                 // --- GLOW DO BANQUEIRO ---
                 if ((rand() % 100) < 10) { 
                     int req[NUM_RESOURCES] = {0};
@@ -170,6 +188,8 @@ void execute_processes_rr(void){
                 note = " (Concluido)";
             } else if (blocked_now) {
                 if (current->state == BLOQUEADO_RECURSO) note = " (Bloqueou Recurso)";
+                // Como não criamos um estado exclusivo para Memória, usamos a mensagem para diferenciar
+                else if (current->blocked_time_remaining == 3) note = "(Bloq E/S / Page Fault)";
                 else note = " (Bloqueou E/S)";
             } else {
                 note = " (Preempcao)";
@@ -202,8 +222,15 @@ void execute_processes_rr(void){
                     current->next = NULL;
                 }
             }
+            // Imprime o estado da memória no final da fatia (PRINT A CADA ITERAÇÃO)
+            // print_memory_status();
+            // printf("\n"); // Uma quebra de linha extra para organizar a tela
         }
     }
+
+    // Imprime o estado final da memória no final da fatia
+    print_memory_status();
+    printf("\n");
     
     float avg_turnaround = completed > 0 ? (float)tot_turnaround / completed : 0;
     float avg_response = completed > 0 ? (float)tot_response / completed : 0;

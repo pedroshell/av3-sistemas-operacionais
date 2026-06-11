@@ -110,7 +110,7 @@ extern int clock_pointer;       // Ponteiro do 'relógio' da memória virtual (u
 void initialize_memory(void);
 int generate_memory_request(Process* p);
 void handle_page_fault(Process* p, int logical_page);
-
+void print_memory_status(void);
 
 
 #endif

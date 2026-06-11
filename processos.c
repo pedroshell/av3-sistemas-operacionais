@@ -77,10 +77,19 @@ void list_processes(void){
     
     printf("\n--- LISTA DE PROCESSOS ATIVOS ---\n");
     printf("Recursos Globais Disponiveis: [Imp: %d, Disc: %d, Red: %d]\n", available_resources[0], available_resources[1], available_resources[2]);
-    printf("------------------------------------------------------------------------------------------------------\n");
+    printf("------------------------------------------------------------------------------------------------------------------------\n");
     
     while(current){
-        printf("ID: %02d | Estado: %-17s | Exec: %02d/%02d | Max: [%d,%d,%d] | Alocado: [%d,%d,%d] | Need: [%d,%d,%d]\n",
+
+        // O laço conta quantas páginas deste processo estão carregadas na memória RAM
+        int pages_in_ram = 0;
+        for (int i = 0; i < current->num_pages; i++){
+            if (current->page_table[i].valid == 1){
+                pages_in_ram++;
+            }
+        }
+
+        printf("ID: %02d | Estado: %-17s | Exec: %02d/%02d | Max: [%d,%d,%d] | Alocado: [%d,%d,%d] | Need: [%d,%d,%d] | Pags(RAM): %d/%d\n",
                 current->id,
                 (current->state == PRONTO) ? "PRONTO":
                 (current->state == EM_EXECUCAO) ? "EM_EXECUCAO":
@@ -91,11 +100,12 @@ void list_processes(void){
                 current->total_execution_time,
                 current->max_need[0], current->max_need[1], current->max_need[2],
                 current->allocation[0], current->allocation[1], current->allocation[2],
-                current->need[0], current->need[1], current->need[2]);
+                current->need[0], current->need[1], current->need[2],
+                pages_in_ram, current->num_pages);
     
         current = current->next;
     }
-    printf("------------------------------------------------------------------------------------------------------\n");
+    printf("------------------------------------------------------------------------------------------------------------------------\n");
 }
 
 void terminate_process(int id){
