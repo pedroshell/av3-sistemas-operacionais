@@ -102,7 +102,7 @@ void print_memory_status(void){
     
     for (int i = 0; i < NUM_FRAMES; i++){
         if (RAM[i].process_id == -1){
-            printf("|  %02d  |  LIVRE  |     --      |       -        |\n", i);
+            printf("|  %02d  |  ---  |     --      |       -        |\n", i);
         } else{
             // Destaca o Frame para onde o relógio está apontando com um "->"
             char pointer_mark = (i == clock_pointer) ? '>' : ' ';

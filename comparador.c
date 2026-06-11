@@ -35,6 +35,20 @@ void load_processes_from_file(const char* filename) {
             new_process->pending_request[i] = 0;
         }
 
+        //  --- SETUP DA MEMÓRIA VIRTUAL (PAGINAÇÃO) ---
+        //  Cria entre 1 e MAX_PAGES_PER_PROCESS (definido no kernel.h como 6)
+        new_process->num_pages = (rand() % MAX_PAGES_PER_PROCESS) + 1;
+
+        //  Aloca a memória para o vetor da tabela de páginas
+        new_process->page_table = (PageTableEntry*)malloc(new_process->num_pages * sizeof(PageTableEntry));
+
+        //  Inicializa a tabela
+        for (int i = 0; i < new_process->num_pages; i++){
+            new_process->page_table[i].valid = 0;
+            new_process->page_table[i].frame_allocated = -1;
+        }
+        //  -------------------------------------------------------------------------------------------------
+
         new_process->next = NULL;
 
         if(!process_list){
@@ -58,24 +72,28 @@ void compare_algorithms(void) {
     printf("\n================ FCFS ================\n");
     global_time = 0;
     next_process_id = 1;
+    initialize_memory();
     load_processes_from_file(filename);
     if (process_list) execute_processes_fcfs();
 
     printf("\n============ ROUND ROBIN ============\n");
     global_time = 0;
     next_process_id = 1;
+    initialize_memory();
     load_processes_from_file(filename);
     if (process_list) execute_processes_rr();
 
     printf("\n============= PRIORIDADE =============\n");
     global_time = 0;
     next_process_id = 1;
+    initialize_memory();
     load_processes_from_file(filename);
     if (process_list) execute_processes_priority();
 
 //    printf("\n============== LOTERIA ==============\n");
 //    global_time = 0;
- //   next_process_id = 1;
+//    next_process_id = 1;
+//    initialize_memory();
 //    load_processes_from_file(filename);
 //    if (process_list) execute_processes_lottery();
 }
