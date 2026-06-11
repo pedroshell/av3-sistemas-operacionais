@@ -4,9 +4,11 @@
 //  Aqui elas são de fato alocadas na memória do compilador
 Frame RAM[NUM_FRAMES];
 int clock_pointer = 0;
+int total_page_faults = 0;
 
 //  Inicializa a RAM colocando com todos os frames livres
 void initialize_memory(void){
+    total_page_faults = 0;
     for(int i = 0; i < NUM_FRAMES; i++){
         RAM[i].process_id = -1;
         RAM[i].logical_page = -1;
@@ -18,6 +20,7 @@ void initialize_memory(void){
 
 //  Algoritmo de Segunda Chance (Substituição Global)
 void handle_page_fault(Process* p, int logical_page){
+    total_page_faults++;
     while(1){
         // Se o frame estiver livre ou o bit de referência é 0 (Página vítima)
         if(RAM[clock_pointer].process_id == -1 || RAM[clock_pointer].reference_bit == 0){

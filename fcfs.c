@@ -219,6 +219,15 @@ void execute_processes_fcfs(void){
     printf("Tempo de resposta medio: %.2f\n", avg_response);
     printf("O tempo de resposta global do sistema é: %.2f\n", avg_turnaround);
     
+    // --- MÉTRICAS DE MEMÓRIA ---
+    int occupied_frames = 0;
+    for(int i = 0; i < NUM_FRAMES; i++) {
+        if(RAM[i].process_id != -1) occupied_frames++;
+    }
+    float mem_util = ((float)occupied_frames / NUM_FRAMES) * 100.0;
+    printf("Total de Page Faults (Faltas de Pagina): %d\n", total_page_faults);
+    printf("Utilizacao final da RAM: %.2f%% (%d/%d frames ocupados)\n", mem_util, occupied_frames, NUM_FRAMES);
+
     print_gantt_chart();
     
     printf("\nTodos os processos foram executados. Tempo Global atual: %d. \n", global_time);

@@ -61,6 +61,7 @@ typedef struct Process{
 extern Process* process_list;
 extern int next_process_id;
 extern int global_time;
+extern int total_page_faults;
 
 // Variável global do Banqueiro
 extern int available_resources[NUM_RESOURCES];
