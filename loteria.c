@@ -20,6 +20,10 @@ void execute_processes_lottery(void){
 
     terminal_writestring("Iniciando escalonamento LOTERIA......\n");
 
+    printf("\n--- ESTADO INICIAL DA MEMORIA (VAZIA) ---\n");
+    print_memory_status();
+    printf("\n");
+
     while (process_list != NULL) {
         int all_blocked = 1;
         int total_tickets = 0;
@@ -89,6 +93,17 @@ void execute_processes_lottery(void){
         int blocked_now = 0;
 
         while(time_run < quantum && selected->time_remaining > 0) {
+
+            // --- SIMULAÇÃO DE ACESSO À MEMÓRIA (PAGE FAULT) ---
+            if (generate_memory_request(selected) == 1) {
+                selected->state = BLOQUEADO;
+                selected->blocked_time_remaining = 3; // Tempo para buscar a página no disco
+                blocked_now = 1;
+                printf("Tempo: %d | Processo: %d sofreu PAGE FAULT -> Aguardando disco...\n", global_time, selected->id);
+                last_id = -1;
+                break; // Quebra o quantum e libera a CPU
+            }
+
             if ((rand() % 100) < 15) {
                 selected->state = BLOQUEADO;
                 selected->blocked_time_remaining = 3; 
@@ -137,6 +152,10 @@ void execute_processes_lottery(void){
                 printf("Tempo: %d | Processo: %d sofreu preempcao -> PRONTO.\n", global_time, selected->id);
             }
         }
+
+        // Imprime o estado da memória após o processo perder a CPU
+        print_memory_status();
+        printf("\n");
     }
     
     float avg_turnaround = completed > 0 ? (float)tot_turnaround / completed : 0;

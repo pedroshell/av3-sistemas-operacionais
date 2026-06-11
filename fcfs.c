@@ -19,6 +19,10 @@ void execute_processes_fcfs(void){
 
     terminal_writestring("Iniciando escalonamento FCFS (com Banqueiro e Gantt)......\n");
     
+    printf("\n--- ESTADO INICIAL DA MEMORIA (VAZIA) ---\n");
+    print_memory_status();
+    printf("\n");
+
     while (process_list != NULL) {
         int all_blocked = 1;
         Process* temp = process_list;
@@ -79,7 +83,29 @@ void execute_processes_fcfs(void){
         int event_start = global_time;
 
         while(selected->time_remaining > 0){
-            
+
+            // --- SIMULAÇÃO DE ACESSO À MEMÓRIA (PAGE FAULT) ---
+            if (generate_memory_request(selected) == 1) {
+                // Em FCFS a E/S é síncrona. A CPU inteira pausa aguardando o disco.
+                selected->state = BLOQUEADO;
+                printf("tempo %d: processo %d sofreu PAGE FAULT -> Aguardando disco...\n", global_time, selected->id);
+                
+                // Fecha o bloco atual no Gantt com o motivo do bloqueio
+                add_gantt_event(event_start, global_time, selected->id, " (Page Fault)");
+                
+                sleep(3); // Simula o tempo de busca no disco
+                global_time += 3;
+                last_id = -1;
+                
+                selected->state = EM_EXECUCAO;
+                printf("tempo %d: processo %d carregou a pagina -> Retornando a execucao\n", global_time, selected->id);
+                
+                ctx_switches++;
+                last_id = selected->id;
+                event_start = global_time; // Inicia um novo bloco no Gantt
+                continue; // Pula para a próxima iteração para tentar acessar a RAM de novo
+            }
+
             // --- GLOW DO BANQUEIRO ---
             if ((rand() % 100) < 10) { 
                 int req[NUM_RESOURCES] = {0};
@@ -174,6 +200,10 @@ void execute_processes_fcfs(void){
             free(selected);
             last_id = -1;
         }
+
+        // Imprime o estado da memória após o processo perder a CPU
+        print_memory_status();
+        printf("\n");
     }
     
     float avg_turnaround = completed > 0 ? (float)tot_turnaround / completed : 0;

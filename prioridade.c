@@ -23,6 +23,10 @@ void execute_processes_priority(void){
 
     terminal_writestring("Iniciando escalonamento PRIORIDADE (I/O Assincrono e Banqueiro)......\n");
 
+    printf("\n--- ESTADO INICIAL DA MEMORIA (VAZIA) ---\n");
+    print_memory_status();
+    printf("\n");
+
     while (process_list != NULL) {
         int all_blocked = 1;
         Process* temp = process_list;
@@ -100,6 +104,16 @@ void execute_processes_priority(void){
 
         while(time_run < quantum && selected->time_remaining > 0) {
             
+            // --- SIMULAÇÃO DE ACESSO À MEMÓRIA (PAGE FAULT) ---
+            if (generate_memory_request(selected) == 1) {
+                selected->state = BLOQUEADO;
+                selected->blocked_time_remaining = 3; 
+                blocked_now = 2; // '2' identifica Page Fault para o Gantt
+                printf("tempo %d: processo %d sofreu PAGE FAULT -> BLOQUEADO\n", global_time, selected->id);
+                last_id = -1;
+                break;
+            }
+
             // --- GLOW DO BANQUEIRO ---
             if ((rand() % 100) < 10) { 
                 int req[NUM_RESOURCES] = {0};
@@ -173,6 +187,7 @@ void execute_processes_priority(void){
             note = " (Concluido)";
         } else if (blocked_now) {
             if (selected->state == BLOQUEADO_RECURSO) note = " (Bloqueou Recurso)";
+            else if (blocked_now == 2) note = " (Page Fault)";
             else note = " (Bloqueou E/S)";
         } else {
             note = " (Preempcao)";
@@ -203,6 +218,10 @@ void execute_processes_priority(void){
                 printf("tempo %d: processo %d sofreu preempcao -> PRONTO.\n", global_time, selected->id);
             }
         }
+
+        // Imprime o estado da memória
+        print_memory_status();
+        printf("\n");
     }
     
     float avg_turnaround = completed > 0 ? (float)tot_turnaround / completed : 0;
