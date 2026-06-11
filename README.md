@@ -7,7 +7,7 @@ Simulador didático em C dos algoritmos: FCFS, Round Robin, Fila de Prioridade e
 Abra o terminal na pasta do projeto e rode o comando abaixo para compilar:
 
 ```bash
-gcc main.c processos.c fcfs.c rr.c prioridade.c loteria.c comparador.c banqueiro.c -o simulador
+gcc main.c processos.c fcfs.c rr.c prioridade.c loteria.c comparador.c banqueiro.c memoria.c -o simulador
 ```
 para executar utilize
 
