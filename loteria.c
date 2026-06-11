@@ -20,6 +20,7 @@ void execute_processes_lottery(void){
 
     terminal_writestring("Iniciando escalonamento LOTERIA......\n");
 
+    initialize_memory();
     printf("\n--- ESTADO INICIAL DA MEMORIA (VAZIA) ---\n");
     print_memory_status();
     printf("\n");
@@ -178,6 +179,7 @@ void execute_processes_lottery(void){
     }
     float mem_util = ((float)occupied_frames / NUM_FRAMES) * 100.0;
     printf("Total de Page Faults (Faltas de Pagina): %d\n", total_page_faults);
+    printf("Total de Substituicoes de Pagina: %d\n", total_page_replacements);
     printf("Utilizacao final da RAM: %.2f%% (%d/%d frames ocupados)\n", mem_util, occupied_frames, NUM_FRAMES);
 
     printf("\nTodos os processos foram executados. Tempo Global atual: %d. \n", global_time);

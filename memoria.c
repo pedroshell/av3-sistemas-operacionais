@@ -5,17 +5,19 @@
 Frame RAM[NUM_FRAMES];
 int clock_pointer = 0;
 int total_page_faults = 0;
+int total_page_replacements = 0;
 
 //  Inicializa a RAM colocando com todos os frames livres
 void initialize_memory(void){
     total_page_faults = 0;
+    total_page_replacements = 0;
     for(int i = 0; i < NUM_FRAMES; i++){
         RAM[i].process_id = -1;
         RAM[i].logical_page = -1;
         RAM[i].reference_bit = 0;
     }
     clock_pointer = 0;
-    terminal_writestring("Memória RAM (Virtual) inicializada com sucesso!\n");
+    terminal_writestring("Memoria RAM inicializada com sucesso!\n");
 }
 
 //  Algoritmo de Segunda Chance (Substituição Global)
@@ -27,6 +29,7 @@ void handle_page_fault(Process* p, int logical_page){
 
             // Se o frame NÃO estava livre, precisamos expulsar a página do antigo processo dono
             if(RAM[clock_pointer].process_id != -1){
+                total_page_replacements++;
                 int victim_pid = RAM[clock_pointer].process_id;
                 int victim_page = RAM[clock_pointer].logical_page;
 
@@ -104,12 +107,17 @@ void print_memory_status(void){
     printf("--------------------------------------------------\n");
     
     for (int i = 0; i < NUM_FRAMES; i++){
+
+        // Destaca o Frame para onde o relógio está apontando com um "->"
+        char pointer_mark = (i == clock_pointer) ? '>' : ' ';
+
         if (RAM[i].process_id == -1){
-            printf("|  %02d  |  ---  |     --      |       -        |\n", i);
+            // Frame livre
+            printf("|  %c%02d  |  ---  |     --      |       -        |\n",
+                    pointer_mark, i);
         } else{
-            // Destaca o Frame para onde o relógio está apontando com um "->"
-            char pointer_mark = (i == clock_pointer) ? '>' : ' ';
-            printf("| %c%02d   |   P%02d    |     %02d      |       %d        |\n",
+            // Frame ocupado
+            printf("|  %c%02d   |   P%02d    |     %02d      |       %d        |\n",
                     pointer_mark, i, RAM[i].process_id, RAM[i].logical_page, RAM[i].reference_bit);
         }
     }

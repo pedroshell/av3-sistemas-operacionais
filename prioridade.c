@@ -23,6 +23,7 @@ void execute_processes_priority(void){
 
     terminal_writestring("Iniciando escalonamento PRIORIDADE (I/O Assincrono e Banqueiro)......\n");
 
+    initialize_memory();
     printf("\n--- ESTADO INICIAL DA MEMORIA (VAZIA) ---\n");
     print_memory_status();
     printf("\n");
@@ -244,6 +245,7 @@ void execute_processes_priority(void){
     }
     float mem_util = ((float)occupied_frames / NUM_FRAMES) * 100.0;
     printf("Total de Page Faults (Faltas de Pagina): %d\n", total_page_faults);
+    printf("Total de Substituicoes de Pagina: %d\n", total_page_replacements);
     printf("Utilizacao final da RAM: %.2f%% (%d/%d frames ocupados)\n", mem_util, occupied_frames, NUM_FRAMES);
 
     print_gantt_chart();
