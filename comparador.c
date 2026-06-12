@@ -73,6 +73,7 @@ void compare_algorithms(void) {
     global_time = 0;
     next_process_id = 1;
     initialize_memory();
+    srand(42);
     load_processes_from_file(filename);
     if (process_list) execute_processes_fcfs();
 
@@ -80,6 +81,7 @@ void compare_algorithms(void) {
     global_time = 0;
     next_process_id = 1;
     initialize_memory();
+    srand(42);
     load_processes_from_file(filename);
     if (process_list) execute_processes_rr();
 
@@ -87,6 +89,7 @@ void compare_algorithms(void) {
     global_time = 0;
     next_process_id = 1;
     initialize_memory();
+    srand(42);
     load_processes_from_file(filename);
     if (process_list) execute_processes_priority();
 
@@ -94,6 +97,7 @@ void compare_algorithms(void) {
 //    global_time = 0;
 //    next_process_id = 1;
 //    initialize_memory();
+//    srand(42);
 //    load_processes_from_file(filename);
 //    if (process_list) execute_processes_lottery();
 }

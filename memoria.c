@@ -33,14 +33,15 @@ void handle_page_fault(Process* p, int logical_page){
                 int victim_pid = RAM[clock_pointer].process_id;
                 int victim_page = RAM[clock_pointer].logical_page;
 
+                printf("  -> [SUBSTITUICAO] Processo %02d perdeu a pagina %d (Frame %d liberado).\n",
+                                                 victim_pid,      victim_page,   clock_pointer);
+
                 // Procura o processo vítima na lista para atualizar sua tabela de páginas
                 Process* temp = process_list;
                 while(temp != NULL){
                     if(temp->id == victim_pid){
                         temp->page_table[victim_page].valid = 0;
                         temp->page_table[victim_page].frame_allocated = -1;
-                        printf("  -> [SUBSTITUICAO] Processo %02d perdeu a pagina %d (Frame %d liberado).\n",
-                                                            victim_pid,      victim_page,   clock_pointer);
                         break;
                     }
                     temp = temp->next;

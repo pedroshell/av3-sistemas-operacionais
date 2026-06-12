@@ -224,8 +224,8 @@ void execute_processes_rr(void){
                 }
             }
             // Imprime o estado da memória no final da fatia (PRINT A CADA ITERAÇÃO)
-            // print_memory_status();
-            // printf("\n"); // Uma quebra de linha extra para organizar a tela
+            print_memory_status();
+            printf("\n"); // Uma quebra de linha extra para organizar a tela
         }
     }
 
