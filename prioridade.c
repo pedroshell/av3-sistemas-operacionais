@@ -105,8 +105,14 @@ void execute_processes_priority(void){
 
         while(time_run < quantum && selected->time_remaining > 0) {
             
+            // Calcula quantos clocks da CPU o processo já consumiu na sua vida útil
+            int tempo_decorrido = selected->total_execution_time - selected->time_remaining;
+
+            // Busca no array pré-gerado qual é a página exata para este tick
+            int requested_page = selected->page_requests[tempo_decorrido];
+
             // --- SIMULAÇÃO DE ACESSO À MEMÓRIA (PAGE FAULT) ---
-            if (generate_memory_request(selected) == 1) {
+            if (generate_memory_request(selected, requested_page) == 1) {
                 selected->state = BLOQUEADO;
                 selected->blocked_time_remaining = 3; 
                 blocked_now = 2; // '2' identifica Page Fault para o Gantt

@@ -74,13 +74,16 @@ void handle_page_fault(Process* p, int logical_page){
 
 
 //  Retorna 0 para Page Hit (sucesso) e 1 para Page Fault (falha)
-int generate_memory_request(Process* p){
+int generate_memory_request(Process* p, int logical_page){
     if (p->num_pages <= 0) return 0; // Safeguard
 
-    // Sorteia uma página para acessar neste instante
-    int target_page = rand() % p->num_pages;
+    // --- CORREÇÃO AQUI ---
+    // Removemos o rand() para não gerar novas páginas aleatórias durante a execução.
+    // Agora o "alvo" é a página fixa e justa que veio do array pré-calculado.
+    int target_page = logical_page; 
+    
     printf("[Memoria] Processo %02d solicitando acesso a pagina %d...\n",
-                              p->id,                        target_page);
+                                  p->id,                        target_page);
     
     // Consulta a Tabela de páginas do processo
     if (p->page_table[target_page].valid == 1){
@@ -97,7 +100,6 @@ int generate_memory_request(Process* p){
         handle_page_fault(p, target_page);
         return 1;   // Avisa o escalonador que houve um Page Fault e o processo deve ser bloqueado
     }
-
 }
 
 void print_memory_status(void){

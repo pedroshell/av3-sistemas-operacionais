@@ -100,10 +100,16 @@ void execute_processes_rr(void){
             int event_start = global_time; // Marca início da fatia no Gantt
 
             while(time_run < quantum && current->time_remaining > 0) {
-                
+            
+                // Calcula quantos clocks da CPU o processo já consumiu na sua vida útil
+                int tempo_decorrido = current->total_execution_time - current->time_remaining;
+
+                // Busca no array pré-gerado qual é a página exata para este tick
+                int requested_page = current->page_requests[tempo_decorrido];
+
                 // --- SIMULAÇÃO DE ACESSO À MEMÓRIA (PAGE FAULT) ---
                 // Verifica a memória antes de qualquer coisa (recursos ou I/O)
-                if (generate_memory_request(current) == 1){
+                if (generate_memory_request(current, requested_page) == 1){
                     // Retornou 1: Page Fault!
                     // O processo precisa ir ao disco buscar a página. Ele é bloqueado.
                     current->state = BLOQUEADO;

@@ -41,6 +41,7 @@ typedef struct Process{
     int priority;
     int tickets;
     int first_execution_time;
+    int* page_requests;     // Array com a sequência pré-calculada de acessos
     ProcessState state;
     
     // --- NOVOS CAMPOS: Algoritmo do Banqueiro ---
@@ -110,7 +111,7 @@ extern int clock_pointer;       // Ponteiro do 'relógio' da memória virtual (u
 
 // --- Funções de Memória Virtual ---
 void initialize_memory(void);
-int generate_memory_request(Process* p);
+int generate_memory_request(Process* p, int logical_page);
 void handle_page_fault(Process* p, int logical_page);
 void print_memory_status(void);
 

@@ -42,6 +42,14 @@ void load_processes_from_file(const char* filename) {
         //  Aloca a memória para o vetor da tabela de páginas
         new_process->page_table = (PageTableEntry*)malloc(new_process->num_pages * sizeof(PageTableEntry));
 
+        //  PRÉ-GERAÇÃO DA SEQUÊNCIA DE ACESSOS À MEMÓRIA
+        //  Cria um array do tamanho do tempo de execução do processo
+        new_process->page_requests = (int*)malloc(exec * sizeof(int));
+        for (int i = 0; i < exec; i++){
+            // Sorteia qual página será acessada em cada clock de CPU
+            new_process->page_requests[i] = rand() % new_process->num_pages;
+        }
+
         //  Inicializa a tabela
         for (int i = 0; i < new_process->num_pages; i++){
             new_process->page_table[i].valid = 0;

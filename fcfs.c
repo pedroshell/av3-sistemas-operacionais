@@ -85,8 +85,13 @@ void execute_processes_fcfs(void){
 
         while(selected->time_remaining > 0){
 
+            // Calcula o tick atual do processo
+            int tempo_decorrido = selected->total_execution_time - selected->time_remaining;
+            // Busca a página
+            int requested_page = selected->page_requests[tempo_decorrido];
+
             // --- SIMULAÇÃO DE ACESSO À MEMÓRIA (PAGE FAULT) ---
-            if (generate_memory_request(selected) == 1) {
+            if (generate_memory_request(selected, requested_page) == 1) {
                 // Em FCFS a E/S é síncrona. A CPU inteira pausa aguardando o disco.
                 selected->state = BLOQUEADO;
                 printf("tempo %d: processo %d sofreu PAGE FAULT -> Aguardando disco...\n", global_time, selected->id);
