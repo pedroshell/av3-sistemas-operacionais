@@ -38,7 +38,7 @@ void create_process(void){
     }
 
     //  --- Setup da Memória Virtual ---
-    //  Sorteia um número de páginas para o process entre 3 e MAX_PAGES_PER_PROCESS
+    //  Sorteia um número de páginas para o processo entre 3 e MAX_PAGES_PER_PROCESS
     new_process->num_pages = (rand() % (MAX_PAGES_PER_PROCESS - 2)) + 3;
 
     //  Alocar o vetor na tabela de páginas dinamicamente
@@ -48,6 +48,13 @@ void create_process(void){
     for (int i = 0; i < new_process->num_pages; i++){
         new_process->page_table[i].valid = 0;
         new_process->page_table[i].frame_allocated = -1;
+    }
+
+    // --- CORREÇÃO ADICIONADA: Aloca e preenche as requisições de página ---
+    new_process->page_requests = (int*)malloc(new_process->total_execution_time * sizeof(int));
+    for (int i = 0; i < new_process->total_execution_time; i++) {
+        // Sorteia uma página válida dentro do limite do processo
+        new_process->page_requests[i] = rand() % new_process->num_pages; 
     }
 
     new_process->next = NULL;
@@ -123,6 +130,7 @@ void terminate_process(int id){
         wake_up_resource_blocked_processes();
         
         terminal_writestring("Processo ERRADICADO com sucesso.\n");
+        free(current->page_requests); // Libera as requisições
         free(current->page_table);
         free(current);
         return;
@@ -144,6 +152,8 @@ void terminate_process(int id){
     release_resources(current);
     wake_up_resource_blocked_processes();
     
+    free(current->page_requests); // Libera as requisições
+    free(current->page_table);
     free(current);
     terminal_writestring("Processo ERRADICADO com sucesso.\n");
 }

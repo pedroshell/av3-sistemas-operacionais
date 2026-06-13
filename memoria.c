@@ -77,9 +77,11 @@ void handle_page_fault(Process* p, int logical_page){
 int generate_memory_request(Process* p, int logical_page){
     if (p->num_pages <= 0) return 0; // Safeguard
 
-    // --- CORREÇÃO AQUI ---
-    // Removemos o rand() para não gerar novas páginas aleatórias durante a execução.
-    // Agora o "alvo" é a página fixa e justa que veio do array pré-calculado.
+    // --- CORREÇÃO ADICIONADA: Trava de Segurança ---
+    if (logical_page < 0 || logical_page >= p->num_pages) {
+        logical_page = 0; // Força uma página válida para evitar Segmention Fault (Travamento)
+    }
+
     int target_page = logical_page; 
     
     printf("[Memoria] Processo %02d solicitando acesso a pagina %d...\n",
@@ -142,11 +144,6 @@ void make_process_pages_removable(int pid){
     
     // Imprime a mensagem se o processo tinha páginas na memória
     if(pages_found > 0){
-        printf("  -> [Memoria] Processo %02d finalizado! Suas %d pagina(s) na RAM agora sao removiveis (Bit = 0).\n", pid, pages_found);
+        printf("  -> [Memoria] Processo %02d finalizado! Sua(s) %d pagina(s) na RAM agora sao removiveis (Bit = 0).\n", pid, pages_found);
     }
 }
-
-
-
-
-
