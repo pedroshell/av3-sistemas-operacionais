@@ -17,8 +17,12 @@ void execute_processes_lottery(void){
     int ctx_switches = 0;
     int cpu_busy = 0;
     int last_id = -1;
+    
+    // --- ADICIONADO: Inicia os rastreadores do Gantt ---
+    reset_gantt();
+    int idle_start = -1;
 
-    terminal_writestring("Iniciando escalonamento LOTERIA......\n");
+    terminal_writestring("Iniciando escalonamento LOTERIA (I/O Assincrono, Banqueiro e Gantt)......\n");
 
     initialize_memory();
     printf("\n--- ESTADO INICIAL DA MEMORIA (VAZIA) ---\n");
@@ -31,7 +35,8 @@ void execute_processes_lottery(void){
         Process* temp = process_list;
         
         while(temp) {
-            if (temp->state != BLOQUEADO) {
+            // --- ADICIONADO: Ignora os bloqueados pelo banqueiro também ---
+            if (temp->state != BLOQUEADO && temp->state != BLOQUEADO_RECURSO) {
                 all_blocked = 0;
             }
             if (temp->state == PRONTO) {
@@ -41,7 +46,10 @@ void execute_processes_lottery(void){
         }
 
         if (all_blocked || total_tickets == 0) {
-            printf("Tempo: %d | CPU Ociosa\n", global_time);
+            // --- ADICIONADO: Conta a ociosidade para o Gantt ---
+            if (idle_start == -1) idle_start = global_time;
+
+            printf("tempo %d: CPU Ociosa (Todos os processos bloqueados ou nenhum bilhete)\n", global_time);
             sleep(1);
             global_time++;
             last_id = -1;
@@ -52,12 +60,34 @@ void execute_processes_lottery(void){
                     temp->blocked_time_remaining--;
                     if(temp->blocked_time_remaining <= 0) {
                         temp->state = PRONTO;
-                        printf("Tempo: %d | Processo: %d concluiu E/S -> PRONTO\n", global_time, temp->id);
+                        printf("tempo %d: processo %d concluiu E/S -> PRONTO\n", global_time, temp->id);
                     }
                 }
                 temp = temp->next;
             }
+
+            // --- ADICIONADO: Detecção de Deadlock do Banqueiro ---
+            int only_resource_blocks = 1;
+            temp = process_list;
+            while(temp) {
+                if (temp->state != BLOQUEADO_RECURSO) {
+                    only_resource_blocks = 0;
+                    break;
+                }
+                temp = temp->next;
+            }
+            if (only_resource_blocks && process_list != NULL) {
+                printf("\n>>> tempo %d: DEADLOCK DETECTADO! Sistema travado por falta de recursos. Encerrando execucao.\n", global_time);
+                break;
+            }
+
             continue;
+        } else {
+            // Se saiu do estado ocioso, registra o bloco no Gantt
+            if (idle_start != -1) {
+                add_gantt_event(idle_start, global_time, -1, "");
+                idle_start = -1;
+            }
         }
 
         int winning_ticket = (rand() % total_tickets) + 1;
@@ -79,7 +109,7 @@ void execute_processes_lottery(void){
         if(!selected) continue;
 
         selected->state = EM_EXECUCAO;
-        printf("\n--- Tempo: %d | Processo: %d CPU (Bilhetes: %d, Q: %d) ---\n", global_time, selected->id, selected->tickets, quantum);
+        printf("\n--- tempo %d: processo %d assumiu a CPU (Bilhetes: %d, Quantum: %d) ---\n", global_time, selected->id, selected->tickets, quantum);
         
         if (selected->first_execution_time == -1) {
             selected->first_execution_time = global_time;
@@ -92,6 +122,7 @@ void execute_processes_lottery(void){
 
         int time_run = 0;
         int blocked_now = 0;
+        int event_start = global_time; // Marca início da fatia no Gantt
 
         while(time_run < quantum && selected->time_remaining > 0) {
 
@@ -105,17 +136,54 @@ void execute_processes_lottery(void){
             if (generate_memory_request(selected, requested_page) == 1) {
                 selected->state = BLOQUEADO;
                 selected->blocked_time_remaining = 3; // Tempo para buscar a página no disco
-                blocked_now = 1;
-                printf("Tempo: %d | Processo: %d sofreu PAGE FAULT -> Aguardando disco...\n", global_time, selected->id);
+                blocked_now = 2; // '2' identifica Page Fault para o Gantt
+                printf("tempo %d: processo %d sofreu PAGE FAULT -> Aguardando disco...\n", global_time, selected->id);
                 last_id = -1;
                 break; // Quebra o quantum e libera a CPU
             }
 
-            if ((rand() % 100) < 15) {
+            // --- ADICIONADO: GLOW DO BANQUEIRO ---
+            if ((rand() % 100) < 10) { 
+                int req[NUM_RESOURCES] = {0};
+                int has_request = 0;
+                const char* resource_names[NUM_RESOURCES] = {"impressora(s)", "disco(s)", "porta(s) de rede"};
+                
+                for(int i = 0; i < NUM_RESOURCES; i++) {
+                    if (selected->need[i] > 0) {
+                        req[i] = (rand() % selected->need[i]) + 1; 
+                        has_request = 1;
+                    }
+                }
+                
+                if (has_request) {
+                    for(int i = 0; i < NUM_RESOURCES; i++) {
+                        if(req[i] > 0){
+                            printf("tempo %d: processo %d solicitou %d %s\n", global_time, selected->id, req[i], resource_names[i]);
+                        }
+                    }
+                    
+                    if (request_resources(selected, req)) {
+                        printf("tempo %d: Algoritmo do Banqueiro permitiu alocacao (Estado Seguro).\n", global_time);
+                    } else {
+                        printf("tempo %d: Algoritmo do Banqueiro detectou estado inseguro. Processo %d bloqueado.\n", global_time, selected->id);
+                        printf("   ↳ Vetor Disponivel: [Imp: %d, Disc: %d, Red: %d]\n", available_resources[0], available_resources[1], available_resources[2]);
+                        printf("   ↳ Necessidade P%d : [Imp: %d, Disc: %d, Red: %d] -> (Insuficiente para garantir seguranca)\n", selected->id, selected->need[0], selected->need[1], selected->need[2]);
+                        
+                        for(int i=0; i<NUM_RESOURCES; i++) selected->pending_request[i] = req[i];
+                        
+                        selected->state = BLOQUEADO_RECURSO;
+                        blocked_now = 1;
+                        last_id = -1;
+                        break; 
+                    }
+                }
+            }
+
+            if (!blocked_now && (rand() % 100) < 15) {
                 selected->state = BLOQUEADO;
                 selected->blocked_time_remaining = 3; 
                 blocked_now = 1;
-                printf("Tempo: %d | Processo: %d solicitou E/S -> BLOQUEADO\n", global_time, selected->id);
+                printf("tempo %d: processo %d solicitou E/S -> BLOQUEADO\n", global_time, selected->id);
                 last_id = -1;
                 break; 
             }
@@ -125,7 +193,7 @@ void execute_processes_lottery(void){
             selected->time_remaining--;
             time_run++;
             cpu_busy++;
-            printf("Tempo: %d | Processo: %d | Restante: %d \n", global_time, selected->id, selected->time_remaining);
+            printf("tempo %d: processo %d executando... (Restante: %d)\n", global_time, selected->id, selected->time_remaining);
             
             Process* update_io = process_list;
             while(update_io){
@@ -133,15 +201,39 @@ void execute_processes_lottery(void){
                     update_io->blocked_time_remaining--;
                     if(update_io->blocked_time_remaining <= 0){
                         update_io->state = PRONTO;
-                        printf("Tempo: %d | Processo: %d concluiu E/S -> PRONTO\n", global_time, update_io->id);
+                        printf("tempo %d: processo %d concluiu E/S no background -> PRONTO\n", global_time, update_io->id);
                     }
                 }
                 update_io = update_io->next;
             }
         }
 
+        // --- ADICIONADO: Avalia o motivo do fim da fatia para plotar no Gantt ---
+        int event_end = global_time;
+        const char* note = "";
+        
         if (selected->time_remaining <= 0) {
-            printf("Tempo: %d | Processo: %d CONCLUIDO.\n", global_time, selected->id);
+            note = " (Concluido)";
+        } else if (blocked_now) {
+            if (selected->state == BLOQUEADO_RECURSO) note = " (Bloqueou Recurso)";
+            else if (blocked_now == 2) note = " (Page Fault)";
+            else note = " (Bloqueou E/S)";
+        } else {
+            note = " (Preempcao)";
+        }
+        
+        add_gantt_event(event_start, event_end, selected->id, note);
+
+        if (selected->time_remaining <= 0) {
+            printf("tempo %d: processo %d CONCLUIDO.\n", global_time, selected->id);
+            
+            // --- Marca as páginas como removíveis na memória ---
+            make_process_pages_removable(selected->id);
+
+            // --- Libera recursos retidos pelo banqueiro ---
+            release_resources(selected);
+            wake_up_resource_blocked_processes();
+            
             tot_turnaround += (global_time - selected->arrival_time);
             completed++;
             if(selected == process_list) {
@@ -156,7 +248,7 @@ void execute_processes_lottery(void){
         } else {
             if (!blocked_now) {
                 selected->state = PRONTO;
-                printf("Tempo: %d | Processo: %d sofreu preempcao -> PRONTO.\n", global_time, selected->id);
+                printf("tempo %d: processo %d sofreu preempcao -> PRONTO.\n", global_time, selected->id);
             }
         }
 
@@ -187,6 +279,9 @@ void execute_processes_lottery(void){
     printf("Total de Page Faults (Faltas de Pagina): %d\n", total_page_faults);
     printf("Total de Substituicoes de Pagina: %d\n", total_page_replacements);
     printf("Utilizacao final da RAM: %.2f%% (%d/%d frames ocupados)\n", mem_util, occupied_frames, NUM_FRAMES);
+
+    // --- ADICIONADO: Impressão do gráfico ---
+    print_gantt_chart();
 
     printf("\nTodos os processos foram executados. Tempo Global atual: %d. \n", global_time);
 }

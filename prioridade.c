@@ -205,6 +205,9 @@ void execute_processes_priority(void){
         if (selected->time_remaining <= 0) {
             printf("tempo %d: processo %d CONCLUIDO.\n", global_time, selected->id);
             
+            // --- Marca as páginas como removíveis na memória ---
+            make_process_pages_removable(selected->id);
+
             release_resources(selected);
             wake_up_resource_blocked_processes();
             

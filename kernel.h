@@ -87,7 +87,7 @@ int is_safe_state(void);
 int request_resources(Process* p, int request[]);
 void release_resources(Process* p);
 void wake_up_resource_blocked_processes(void);
-
+void make_process_pages_removable(int pid);
 
 // --- Estruturas do Gráfico de Gantt ---
 #define MAX_GANTT_EVENTS 1000

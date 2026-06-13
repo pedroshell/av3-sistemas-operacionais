@@ -207,6 +207,9 @@ void execute_processes_rr(void){
             if (current->time_remaining <= 0) {
                 printf("tempo %d: Processo %d CONCLUIDO.\n", global_time, current->id);
                 
+                // --- Marca as páginas como removíveis na memória ---
+                make_process_pages_removable(current->id);
+                
                 release_resources(current);
                 wake_up_resource_blocked_processes();
                 

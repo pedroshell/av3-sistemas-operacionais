@@ -128,6 +128,24 @@ void print_memory_status(void){
 
 }
 
+// Função que retira a proteção (Segunda Chance) das páginas de um processo concluído
+void make_process_pages_removable(int pid){
+    int pages_found = 0;
+    
+    // Varre a RAM procurando frames que pertencem a este processo
+    for(int i = 0; i < NUM_FRAMES; i++){
+        if(RAM[i].process_id == pid){
+            RAM[i].reference_bit = 0; // Zera o bit (torna removível)
+            pages_found++;
+        }
+    }
+    
+    // Imprime a mensagem se o processo tinha páginas na memória
+    if(pages_found > 0){
+        printf("  -> [Memoria] Processo %02d finalizado! Suas %d pagina(s) na RAM agora sao removiveis (Bit = 0).\n", pid, pages_found);
+    }
+}
+
 
 
 
