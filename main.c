@@ -1,6 +1,9 @@
 #include "kernel.h"
 
 int main() {
+
+    system("chcp 65001 > nul");
+
     srand(time(NULL));
     
     int opcao;
